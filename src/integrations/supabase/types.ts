@@ -14,13 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gateway_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          gateway_enabled: boolean
+          id: string
+          is_active: boolean
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          gateway_enabled?: boolean
+          id?: string
+          is_active?: boolean
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          gateway_enabled?: boolean
+          id?: string
+          is_active?: boolean
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          phone_number: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          phone_number: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          phone_number?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          comment: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          status: string
+          to_phone_number: string
+          to_user_id: string | null
+        }
+        Insert: {
+          amount: number
+          comment?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          status?: string
+          to_phone_number: string
+          to_user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          comment?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          status?: string
+          to_phone_number?: string
+          to_user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_gateway_token: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
