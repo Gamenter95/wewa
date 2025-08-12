@@ -16,15 +16,10 @@ const Gateway = () => {
   const baseUrl = useMemo(() => `https://jiyjlqibnyxmcotcdbzb.functions.supabase.co/gateway`, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (!session) navigate("/auth");
-      setSessionUserId(session?.user?.id ?? null);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate("/auth");
-      setSessionUserId(data.session?.user?.id ?? null);
-    });
-    return () => subscription.unsubscribe();
+    const token = localStorage.getItem("db_token");
+    if (!token) navigate("/auth");
+    setSessionUserId("placeholder"); // presence indicates authenticated via DB token
+    return () => {};
   }, [navigate]);
 
   useEffect(() => {
@@ -33,57 +28,57 @@ const Gateway = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!sessionUserId) return;
+      const token = localStorage.getItem("db_token");
+      if (!token) return;
       setLoading(true);
-      const { data, error } = await supabase
-        .from("gateway_tokens")
-        .select("*")
-        .eq("user_id", sessionUserId)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (error) toast({ title: "Error", description: error.message });
-      setTokenRow(data ?? null);
+      const { data, error } = await supabase.functions.invoke("gateway-admin", {
+        body: { action: "get" },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (error || (data as any)?.error) {
+        toast({ title: "Error", description: (data as any)?.error || error?.message });
+        setTokenRow(null);
+      } else {
+        setTokenRow((data as any)?.tokenRow ?? null);
+      }
       setLoading(false);
     };
     load();
   }, [sessionUserId]);
 
   const generateToken = async () => {
-    if (!sessionUserId) return;
+    const token = localStorage.getItem("db_token");
+    if (!token) return;
     setLoading(true);
-    const { data, error } = await supabase.rpc("generate_gateway_token", { user_uuid: sessionUserId });
-    if (error) {
-      setLoading(false);
-      return toast({ title: "Token error", description: error.message });
-    }
-    // Fetch the newly created token row by token string
-    const { data: newRow } = await supabase
-      .from("gateway_tokens")
-      .select("*")
-      .eq("token", data as string)
-      .maybeSingle();
-    setTokenRow(newRow ?? null);
+    const { data, error } = await supabase.functions.invoke("gateway-admin", {
+      body: { action: "generate" },
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setLoading(false);
+    if (error || (data as any)?.error) return toast({ title: "Token error", description: (data as any)?.error || error?.message });
+    setTokenRow((data as any)?.tokenRow ?? null);
     toast({ title: "Token generated" });
   };
 
   const toggleGateway = async (enabled: boolean) => {
-    if (!tokenRow) return toast({ title: "No token", description: "Generate a token first" });
-    const { error } = await supabase
-      .from("gateway_tokens")
-      .update({ gateway_enabled: enabled })
-      .eq("id", tokenRow.id);
-    if (error) return toast({ title: "Update failed", description: error.message });
-    setTokenRow({ ...tokenRow, gateway_enabled: enabled });
+    const token = localStorage.getItem("db_token");
+    if (!tokenRow || !token) return toast({ title: "No token", description: "Generate a token first" });
+    const { data, error } = await supabase.functions.invoke("gateway-admin", {
+      body: { action: "update", enabled },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (error || (data as any)?.error) return toast({ title: "Update failed", description: (data as any)?.error || error?.message });
+    setTokenRow((data as any)?.tokenRow ?? null);
   };
 
   const revoke = async () => {
-    if (!tokenRow) return;
-    const { error } = await supabase
-      .from("gateway_tokens")
-      .update({ is_active: false, gateway_enabled: false })
-      .eq("id", tokenRow.id);
-    if (error) return toast({ title: "Revoke failed", description: error.message });
+    const token = localStorage.getItem("db_token");
+    if (!token) return;
+    const { data, error } = await supabase.functions.invoke("gateway-admin", {
+      body: { action: "revoke" },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (error || (data as any)?.error) return toast({ title: "Revoke failed", description: (data as any)?.error || error?.message });
     setTokenRow(null);
     toast({ title: "Token revoked" });
   };

@@ -8,20 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 
-const phoneToEmail = (phone: string) => `${phone}@weoo.local`;
+// Removed email mapping – phone-only auth
 
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (session) navigate("/");
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate("/");
-    });
-    return () => subscription.unsubscribe();
+    // Redirect if already authenticated via DB-only token
+    const token = localStorage.getItem("db_token");
+    if (token) navigate("/");
+    return () => {};
   }, [navigate]);
 
   useEffect(() => {
@@ -35,12 +32,16 @@ const Auth = () => {
     const password = String(form.get("password") || "").trim();
     if (!phone || !password) return toast({ title: "Missing fields", description: "Enter phone and password" });
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: phoneToEmail(phone),
-      password,
+    const { data, error } = await supabase.functions.invoke("auth", {
+      body: { action: "login", phone, password },
     });
     setLoading(false);
-    if (error) return toast({ title: "Login failed", description: error.message });
+    if (error || (data && (data as any).error)) {
+      const msg = (data as any)?.error || error?.message || "Login failed";
+      return toast({ title: "Login failed", description: msg });
+    }
+    const { token } = data as any;
+    localStorage.setItem("db_token", token);
     toast({ title: "Logged in" });
     navigate("/");
   };
@@ -53,18 +54,18 @@ const Auth = () => {
     const password = String(form.get("password") || "").trim();
     if (!username || !phone || !password) return toast({ title: "Missing fields", description: "Fill all fields" });
     setLoading(true);
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email: phoneToEmail(phone),
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: { username, phone_number: phone },
-      },
+    const { data, error } = await supabase.functions.invoke("auth", {
+      body: { action: "signup", username, phone, password },
     });
     setLoading(false);
-    if (error) return toast({ title: "Signup failed", description: error.message });
-    toast({ title: "Account created", description: "You can now login" });
+    if (error || (data && (data as any).error)) {
+      const msg = (data as any)?.error || error?.message || "Signup failed";
+      return toast({ title: "Signup failed", description: msg });
+    }
+    const { token } = data as any;
+    localStorage.setItem("db_token", token);
+    toast({ title: "Account created" });
+    navigate("/");
   };
 
   return (
@@ -108,7 +109,7 @@ const Auth = () => {
                 </div>
                 <Button type="submit" disabled={loading} className="w-full">{loading ? "Please wait..." : "Create account"}</Button>
               </form>
-              <p className="text-sm text-muted-foreground mt-2">Tip: Disable email confirmation in Supabase for quicker testing.</p>
+              
             </TabsContent>
           </Tabs>
         </CardContent>

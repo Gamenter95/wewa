@@ -1,1 +1,10 @@
 project_id = "jiyjlqibnyxmcotcdbzb"
+
+[functions.auth]
+verify_jwt = false
+
+[functions.gateway]
+verify_jwt = false
+
+[functions.gateway-admin]
+verify_jwt = false

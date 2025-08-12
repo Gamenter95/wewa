@@ -14,28 +14,30 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUserId(session?.user?.id ?? null);
-    });
-    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user?.id ?? null));
-    return () => subscription.unsubscribe();
+    // DB-only auth: check token and load profile via edge function
+    const token = localStorage.getItem("db_token");
+    if (!token) { setUserId(null); return; }
+    (async () => {
+      const { data, error } = await supabase.functions.invoke("auth", {
+        body: { action: "me" },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (error || (data as any)?.error) { setUserId(null); setProfile(null); return; }
+      const { user, profile } = data as any;
+      setUserId(user?.id ?? null);
+      setProfile(profile ?? null);
+    })();
   }, []);
 
   useEffect(() => {
-    const load = async () => {
-      if (!userId) { setProfile(null); return; }
-      const { data } = await supabase
-        .from("profiles")
-        .select("username, phone_number, balance")
-        .eq("user_id", userId)
-        .maybeSingle();
-      setProfile(data ?? null);
-    };
-    load();
+    // Profile is loaded in the auth effect above
   }, [userId]);
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    const token = localStorage.getItem("db_token");
+    if (token) await supabase.functions.invoke("auth", { body: { action: "logout" }, headers: { Authorization: `Bearer ${token}` } });
+    localStorage.removeItem("db_token");
+    setUserId(null);
     setProfile(null);
   };
 
