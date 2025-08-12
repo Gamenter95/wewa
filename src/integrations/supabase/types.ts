@@ -42,35 +42,73 @@ export type Database = {
           token?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gateway_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
           balance: number
           created_at: string
           id: string
+          password: string
           phone_number: string
           updated_at: string
-          user_id: string
+          user_id: string | null
           username: string
         }
         Insert: {
           balance?: number
           created_at?: string
           id?: string
+          password?: string
           phone_number: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           username: string
         }
         Update: {
           balance?: number
           created_at?: string
           id?: string
+          password?: string
           phone_number?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           username?: string
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          revoked: boolean
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          revoked?: boolean
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          revoked?: boolean
+          token?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -104,6 +142,33 @@ export type Database = {
           status?: string
           to_phone_number?: string
           to_user_id?: string | null
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          phone_number: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          phone_number: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          phone_number?: string
+          updated_at?: string
+          username?: string
         }
         Relationships: []
       }
