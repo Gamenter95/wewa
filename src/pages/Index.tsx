@@ -16,16 +16,45 @@ const Index = () => {
   useEffect(() => {
     // DB-only auth: check token and load profile via edge function
     const token = localStorage.getItem("db_token");
-    if (!token) { setUserId(null); return; }
+    if (!token) { 
+      setUserId(null); 
+      setProfile(null);
+      return; 
+    }
+    
     (async () => {
-      const { data, error } = await supabase.functions.invoke("auth", {
-        body: { action: "me" },
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (error || (data as any)?.error) { setUserId(null); setProfile(null); return; }
-      const { user, profile } = data as any;
-      setUserId(user?.id ?? null);
-      setProfile(profile ?? null);
+      try {
+        const { data, error } = await supabase.functions.invoke("auth", {
+          body: { action: "me" },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        console.log("Auth response:", { data, error });
+        
+        if (error) {
+          console.error("Auth error:", error);
+          setUserId(null); 
+          setProfile(null);
+          return;
+        }
+        
+        if ((data as any)?.error) {
+          console.error("Auth data error:", (data as any).error);
+          setUserId(null); 
+          setProfile(null);
+          return;
+        }
+        
+        const { user, profile } = data as any;
+        console.log("User and profile:", { user, profile });
+        
+        setUserId(user?.id ?? null);
+        setProfile(profile ?? null);
+      } catch (err) {
+        console.error("Auth request failed:", err);
+        setUserId(null);
+        setProfile(null);
+      }
     })();
   }, []);
 
