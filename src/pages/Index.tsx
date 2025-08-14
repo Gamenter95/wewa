@@ -65,7 +65,7 @@ const Index = () => {
               <div className="text-sm text-muted-foreground mt-3">Mobile</div>
               <div className="text-base font-medium">{profile?.phone_number ?? "-"}</div>
               <div className="text-sm text-muted-foreground mt-3">Balance</div>
-              <div className="text-2xl font-bold">${profile?.balance?.toFixed ? profile.balance.toFixed(2) : Number(profile?.balance ?? 0).toFixed(2)}</div>
+              <div className="text-2xl font-bold">₹{profile?.balance?.toFixed ? profile.balance.toFixed(2) : Number(profile?.balance ?? 0).toFixed(2)}</div>
               <div className="flex gap-2 mt-4">
                 <Button onClick={() => navigate("/gateway")}>Open Gateway</Button>
                 <Button variant="secondary" onClick={logout}>Logout</Button>

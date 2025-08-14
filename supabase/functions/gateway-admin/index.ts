@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
 
     return json({ error: "unknown_action" }, { status: 400 });
   } catch (e) {
+    console.error("Gateway admin function error:", e);
     return json({ error: String(e) }, { status: 500 });
   }
 });
